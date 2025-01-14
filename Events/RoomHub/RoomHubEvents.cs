@@ -52,4 +52,14 @@ public class RoomHubEvents
     /// Event that indicates to the connection group that the round ended and to be aware of the receiving suggestions.
     /// </summary>
     public static readonly string ROUND_FINISHED = "ROUND_FINISHED";
+
+    /// <summary>
+    /// Event that indicates that a approval vote for a movie suggested was casted
+    /// </summary>
+    public static readonly string VOTE_CASTED = "VOTE_CASTED";
+
+    /// <summary>
+    /// Event that indicates that all confirmed member of the room voted in approval of a certain movie suggestion
+    /// </summary>
+    public static readonly string MOVIE_PICKED = "MOVIE_PICKED";
 }

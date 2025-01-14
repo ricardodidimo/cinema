@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 using cinema.Events.RoomHub;
+using cinema.Events.RoomHub.CastVote;
 using cinema.Events.RoomHub.ConfirmRound;
 using cinema.Events.RoomHub.CreateRoom;
 using cinema.Events.RoomHub.JoinRoom;
@@ -15,9 +16,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace cinema
 {
-    public class RoomHub(IJWTGenerator _JWTGenerator, IRoomRepository _roomRepository,
-    ICreateRoomEvent createRoomEvent, IJoinRoomEvent joinRoomEvent, ILeaveRoomEvent leaveRoomEvent,
-    IConfirmRoundEvent confirmRoundEvent, IPlayRoundEvent playRoundEvent) : Hub
+    public class RoomHub(IJWTGenerator _JWTGenerator, ICreateRoomEvent createRoomEvent,
+    IJoinRoomEvent joinRoomEvent, ILeaveRoomEvent leaveRoomEvent, IConfirmRoundEvent confirmRoundEvent,
+    IPlayRoundEvent playRoundEvent, ICastVoteEvent castVoteEvent) : Hub
     {
         static readonly string CURRENT_ROOM_INFO_KEY = "CURRENT_ROOM";
         static readonly string CURRENT_PLAYER_INFO_KEY = "CURRENT_PLAYER";
@@ -228,7 +229,7 @@ namespace cinema
             }
 
             await Clients.Group((string)connectedRoomId).SendAsync(RoomHubEvents.CONFIRMED_ROUND,
-                WebsocketResult.Ok(ConfirmRoundResponse.ToResponse(confirmOperation.Value, playerDecode)));
+                WebsocketResult.Ok(confirmOperation.Value));
 
             if (confirmOperation.Value.CanBeginRound)
             {
@@ -253,7 +254,32 @@ namespace cinema
                 return;
             }
 
-            await Clients.Group(request.RoomCode).SendAsync(RoomHubEvents.CONFIRMED_ROUND, WebsocketResult.Ok(playRoundOperation.Value));
+            await Clients.Group(request.RoomCode).SendAsync(RoomHubEvents.ROUND_FINISHED, WebsocketResult.Ok(playRoundOperation.Value));
+        }
+
+        public async Task CastVote(string token, CastVoteRequest request)
+        {
+            var playerDecodeOp = GetPlayerFromToken(token);
+            var playerDecode = playerDecodeOp.Value;
+            if (playerDecodeOp.IsFailed)
+            {
+                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
+                return;
+            }
+
+            var castVoteOperation = await castVoteEvent.Exec(request, playerDecode);
+            if (castVoteOperation.IsFailed)
+            {
+                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(castVoteOperation.Errors.ToResultErrorList()));
+                return;
+            }
+
+            await Clients.Caller.SendAsync(RoomHubEvents.VOTE_CASTED, WebsocketResult.Ok(null));
+
+            if (castVoteOperation.Value.RoomReachedConsensus)
+            {
+                await Clients.Group(request.RoomCode).SendAsync(RoomHubEvents.MOVIE_PICKED, WebsocketResult.Ok(castVoteOperation.Value.Movie));
+            }
         }
     }
 }
