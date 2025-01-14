@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Newtonsoft.Json;
 using cinema.Models;
 using cinema.Repositories.RoomRepository;
 using FluentResults;
@@ -7,8 +7,6 @@ namespace cinema.Events.RoomHub.PlayRound;
 
 public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _httpClientFactory, IConfiguration _configuration) : IPlayRoundEvent
 {
-    public static readonly string JWT_ENCRYPTION_KEY_ID = "jwt_key";
-
     private void SetUpNextRound(MoviePickRoom room)
     {
         room.CurrentRound += 1;
@@ -17,7 +15,6 @@ public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _http
 
     public async Task<IResult<MoviePickRoom>> Exec(PlayRoundRequest request, Player caller)
     {
-        // buscar room
         var roomFindOp = await _roomRepository.FindByIdentifier(request.RoomCode);
         var roomEntry = roomFindOp.Value;
         if (roomFindOp.IsFailed || roomEntry is null)
@@ -62,7 +59,7 @@ public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _http
         };
 
         string responseContent = await response.Content.ReadAsStringAsync();
-        var movieList = JsonSerializer.Deserialize<SuggestionsResult>(responseContent);
+        var movieList = JsonConvert.DeserializeObject<SuggestionsResult>(responseContent);
         roomEntry.Suggestions = movieList;
         this.SetUpNextRound(roomEntry);
         return Result.Ok<MoviePickRoom>(roomEntry);
