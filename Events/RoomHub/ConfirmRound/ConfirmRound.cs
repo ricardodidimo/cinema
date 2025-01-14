@@ -7,27 +7,27 @@ namespace cinema.Events.RoomHub.ConfirmRound;
 
 public class ConfirmRound(IRoomRepository _roomRepository) : IConfirmRoundEvent
 {
-    public async Task<IResult<MoviePickRoom>> Exec(ConfirmRoundRequest request, Player player)
+    public async Task<IResult<ConfirmRoundResponse>> Exec(ConfirmRoundRequest request, Player player)
     {
         var activeRoomOp = await _roomRepository.FindByIdentifier(request.RoomCode);
         var activeRoom = activeRoomOp.Value;
         if (activeRoomOp.IsFailed || activeRoom is null)
         {
-            return await Task.Run(() => Result.Fail<MoviePickRoom>(RoomHubErrors.ACTIVE_ROOM_NOT_FOUND));
+            return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(RoomHubErrors.ACTIVE_ROOM_NOT_FOUND));
         }
 
         var confirmation = activeRoom.PlayersConfirmed.FirstOrDefault(p => p.Identifier == player.Identifier);
         if (confirmation is not null)
         {
-            return await Task.Run(() => Result.Fail<MoviePickRoom>(RoomHubErrors.PLAYER_ALREADY_CONFIRMED));
+            return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(RoomHubErrors.PLAYER_ALREADY_CONFIRMED));
         }
 
         var confirmOperation = await _roomRepository.ConfirmRound(activeRoom, player);
         if (confirmOperation.IsFailed)
         {
-            return await Task.Run(() => Result.Fail<MoviePickRoom>(confirmOperation.Errors));
+            return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(confirmOperation.Errors));
         }
 
-        return await Task.Run(() => Result.Ok(activeRoom));
+        return await Task.Run(() => Result.Ok(ConfirmRoundResponse.ToResponse(activeRoom, player)));
     }
 }

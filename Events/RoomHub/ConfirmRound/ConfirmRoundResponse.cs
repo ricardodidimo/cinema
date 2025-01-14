@@ -7,7 +7,7 @@ public class ConfirmRoundResponse
 {
     public required string ConfirmedPlayerId { get; set; }
     public required string ConfirmedPlayerName { get; set; }
-    public bool ReadyForRound { get; set; }
+    public bool CanBeginRound { get; set; }
     public int ConfirmationsTotal {get; set;}
     public int CurrentRound {get; set;}
 
@@ -17,8 +17,8 @@ public class ConfirmRoundResponse
         {
             ConfirmedPlayerId = playerConfirmed.Identifier,
             ConfirmedPlayerName = playerConfirmed.Name,
-            ReadyForRound = moviePickRoom.CanBeginRound,
-            ConfirmationsTotal = moviePickRoom.PlayersConfirmed.Count,
+            CanBeginRound = moviePickRoom.CanBeginRound,
+            ConfirmationsTotal = moviePickRoom.PlayersConfirmedTotal,
             CurrentRound = moviePickRoom.CurrentRound
         };
     }

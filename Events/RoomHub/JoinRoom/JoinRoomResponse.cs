@@ -25,7 +25,7 @@ public class JoinRoomResponse
             PlayersConnected = moviePickRoom.PlayersConnected,
             PlayersConnectedTotal = moviePickRoom.PlayersConnectedTotal,
             PlayersConfirmed = moviePickRoom.PlayersConfirmed,
-            PlayersConfirmedTotal = moviePickRoom.PlayersConfirmed.Count,
+            PlayersConfirmedTotal = moviePickRoom.PlayersConfirmedTotal,
         };
     }
 }
