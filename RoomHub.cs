@@ -1,7 +1,8 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json;
 using cinema.Events.RoomHub;
 using cinema.Events.RoomHub.CastVote;
+using cinema.Events.RoomHub.ChangeOwnership;
 using cinema.Events.RoomHub.ConfirmRound;
 using cinema.Events.RoomHub.CreateRoom;
 using cinema.Events.RoomHub.JoinRoom;
@@ -18,7 +19,7 @@ namespace cinema
 {
     public class RoomHub(IJWTGenerator _JWTGenerator, ICreateRoomEvent createRoomEvent,
     IJoinRoomEvent joinRoomEvent, ILeaveRoomEvent leaveRoomEvent, IConfirmRoundEvent confirmRoundEvent,
-    IPlayRoundEvent playRoundEvent, ICastVoteEvent castVoteEvent) : Hub
+    IPlayRoundEvent playRoundEvent, ICastVoteEvent castVoteEvent, IChangeOwnershipEvent changeOwnershipEvent) : Hub
     {
         static readonly string CURRENT_ROOM_INFO_KEY = "CURRENT_ROOM";
         static readonly string CURRENT_PLAYER_INFO_KEY = "CURRENT_PLAYER";
@@ -53,10 +54,16 @@ namespace cinema
 
             if (connectedRoomId is not null && connectedPlayer is not null)
             {
-                Player? player = JsonSerializer.Deserialize<Player>((string)connectedPlayer);
                 LeaveRoomRequest request = new() { RoomCode = (string)connectedRoomId };
-                await leaveRoomEvent.Exec(request, player!);
+                IResult<MoviePickRoom> room = await leaveRoomEvent.Exec(request, (Player)connectedPlayer!);
                 await Clients.Group((string)connectedRoomId).SendAsync(RoomHubEvents.PLAYER_LEFT, WebsocketResult.Ok(connectedPlayer));
+
+                if (room.Value.PlayersConnectedTotal > 0 && room.Value.OwnerId == ((Player)connectedPlayer).Identifier)
+                {
+                    ChangeOwnershipRequest passRoomOwnershipRequest = new() { RoomCode = (string)connectedRoomId };
+                    IResult<MoviePickRoom> updatedRoom = await changeOwnershipEvent.Exec(passRoomOwnershipRequest, null);
+                    await Clients.Group((string)connectedRoomId).SendAsync(RoomHubEvents.OWNERSHIP_CHANGED, WebsocketResult.Ok(updatedRoom.Value));
+                }
             }
 
             await base.OnDisconnectedAsync(exception);
@@ -71,13 +78,6 @@ namespace cinema
                 Name = request.Name,
                 Preferences = request.Preferences
             };
-
-            IResult<string> tokenGeneration = _JWTGenerator.Generate(identity);
-            if (tokenGeneration.IsFailed)
-            {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail([RoomHubErrors.FAILED_GENERATE_TOKEN]));
-                return;
-            }
 
             this.StoreConnectionInfo(CURRENT_PLAYER_INFO_KEY, identity);
             await Clients.Caller.SendAsync(RoomHubEvents.SUBSCRIBED, WebsocketResult.Ok(identity));
@@ -187,6 +187,14 @@ namespace cinema
 
             await Clients.Group((string)connectedRoomId).SendAsync(RoomHubEvents.PLAYER_LEFT, WebsocketResult.Ok(playerDecode));
             await Clients.Caller.SendAsync(RoomHubEvents.LEFT, WebsocketResult.Ok(LeaveRoomResponse.ToResponse(removalOperation.Value)));
+
+            MoviePickRoom room = removalOperation.Value;
+            if (room.PlayersConnectedTotal > 0 && room.OwnerId == playerDecode.Value.Identifier)
+            {
+                ChangeOwnershipRequest passRoomOwnershipRequest = new() { RoomCode = (string)connectedRoomId };
+                IResult<MoviePickRoom> updatedRoom = await changeOwnershipEvent.Exec(passRoomOwnershipRequest, null);
+                await Clients.Group((string)connectedRoomId).SendAsync(RoomHubEvents.OWNERSHIP_CHANGED, WebsocketResult.Ok(updatedRoom.Value));
+            }
         }
 
         public async Task ConfirmRound(ConfirmRoundRequest request)
@@ -260,7 +268,6 @@ namespace cinema
             }
 
             await Clients.Caller.SendAsync(RoomHubEvents.VOTE_CASTED, WebsocketResult.Ok(null));
-
             if (castVoteOperation.Value.RoomReachedConsensus)
             {
                 await Clients.Group(request.RoomCode).SendAsync(RoomHubEvents.MOVIE_PICKED, WebsocketResult.Ok(castVoteOperation.Value.Movie));

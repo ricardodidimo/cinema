@@ -1,6 +1,7 @@
 using System.Text;
 using cinema;
 using cinema.Events.RoomHub.CastVote;
+using cinema.Events.RoomHub.ChangeOwnership;
 using cinema.Events.RoomHub.ConfirmRound;
 using cinema.Events.RoomHub.CreateRoom;
 using cinema.Events.RoomHub.JoinRoom;
@@ -20,6 +21,7 @@ builder.Services.AddTransient<ILeaveRoomEvent, LeaveRoom>();
 builder.Services.AddTransient<IConfirmRoundEvent, ConfirmRound>();
 builder.Services.AddTransient<IPlayRoundEvent, PlayRound>();
 builder.Services.AddTransient<ICastVoteEvent, CastVote>();
+builder.Services.AddTransient<IChangeOwnershipEvent, ChangeOwnership>();
 builder.Services.AddTransient<IRoomRepository, RoomRepositoryMem>();
 
 builder.Services.AddHttpClient();

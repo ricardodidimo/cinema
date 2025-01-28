@@ -39,6 +39,11 @@ public class RoomHubEvents
     public static readonly string PLAYER_LEFT = "PLAYER_LEFT";
 
     /// <summary>
+    /// Event that communicates to other 'players' in the group that the owner changed due to promotion or the previous room owner leaving.
+    /// </summary>
+    public static readonly string OWNERSHIP_CHANGED = "OWNERSHIP_CHANGED";
+
+    /// <summary>
     /// Event that indicates to the connection group that a player confirmed the next round.
     /// </summary>
     public static readonly string CONFIRMED_ROUND = "CONFIRMED_ROUND";
