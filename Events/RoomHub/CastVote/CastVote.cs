@@ -16,7 +16,7 @@ public class CastVote(IRoomRepository _roomRepository) : ICastVoteEvent
             return await Task.Run(() => Result.Fail<CastVoteResponse>(RoomHubErrors.ACTIVE_ROOM_NOT_FOUND));
         }
 
-        var movieSuggestion = activeRoom.Suggestions?.results.FirstOrDefault(s => s.Id.ToString() == request.MovieCode);
+        var movieSuggestion = activeRoom.Suggestions?.Results.FirstOrDefault(s => s.Id.ToString() == request.MovieCode);
         if (movieSuggestion is null)
         { 
             return await Task.Run(() => Result.Fail<CastVoteResponse>(RoomHubErrors.ACTIVE_SUGGESTION_NOT_FOUND));
