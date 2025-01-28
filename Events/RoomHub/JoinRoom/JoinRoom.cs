@@ -20,6 +20,11 @@ public class JoinRoom(IRoomRepository _RoomRepository) : IJoinRoomEvent
             return await Task.Run(() => Result.Fail<MoviePickRoom>(RoomHubErrors.ROOM_IS_FULL));
         }
 
+        if (roomEntry.PlayersConnected.Contains(player))
+        {
+            return await Task.Run(() => Result.Fail<MoviePickRoom>(RoomHubErrors.ALREADY_CONNECTED));
+        }
+
         var joinRoom = await _RoomRepository.AddPlayer(roomEntry, player);
         if (joinRoom.IsFailed)
         {
