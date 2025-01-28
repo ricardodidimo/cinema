@@ -12,8 +12,10 @@ public class RoomHubErrors
     public static readonly string PLAYER_ALREADY_CONFIRMED = "PLAYER ALREADY CONFIRMED ROUND";
     public static readonly string PLAYER_ALREADY_VOTED = "PLAYER ALREADY CASTED A VOTE THIS ROUND";
     public static readonly string ROOM_IS_FULL = "ROOM REACHED MAXIMUM CAPACITY";
+    public static readonly string ALREADY_CONNECTED = "PLAYER ALREADY A PARTICIPANT";
     public static readonly string UNABLE_CREATE_ROOM = "UNABLE TO CREATE ROOM";
     public static readonly string UNABLE_UPDATE_ROOM = "UNABLE TO UPDATE ROOM";
+        public static readonly string UNABLE_DELETE_ROOM = "UNABLE TO DELETE ROOM";
     public static readonly string ROOM_CONFIRMATIONS_PENDING = "ROOM HAS CONFIRMATIONS LEFT PENDING";
     public static readonly string SUGGESTIONS_API_ERROR = "UNABLE TO GATHER SUGGESTIONS";
 }
