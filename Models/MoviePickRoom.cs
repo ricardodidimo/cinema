@@ -6,9 +6,9 @@ public class MoviePickRoom
     public required string OwnerId { get; set; }
     public required List<Player> PlayersConnected { get; set; }
     public int PlayersConnectedTotal => this.PlayersConnected.Count;
-    public required List<Player> PlayersConfirmed { get; set; }
-    public int PlayersConfirmedTotal => this.PlayersConnected.Count;
-    public bool CanBeginRound => this.PlayersConnected.Count == PlayersConfirmed.Count;
+    public List<Player>? PlayersConfirmed => this.PlayersConnected.FindAll(p => p.IsReady);
+    public int PlayersConfirmedTotal => this.PlayersConnected.Count(P => P.IsReady);
+    public bool CanBeginRound => this.PlayersConnected.All(P => P.IsReady);
     public int CurrentRound { get; set; }
     public required bool AllowUserPreferences { get; set; }
     public required FilterPreferences RoomPreferences { get; set; }

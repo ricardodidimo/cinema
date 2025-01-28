@@ -10,7 +10,7 @@ public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _http
     private void SetUpNextRound(MoviePickRoom room)
     {
         room.CurrentRound += 1;
-        room.PlayersConfirmed = [];
+        room.PlayersConnected.ForEach(p => p.IsReady = false);
 
         _roomRepository.Update(room);
     }
@@ -39,7 +39,7 @@ public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _http
         List<string> streamings = roomEntry.RoomPreferences.Streamings;
         if (roomEntry.AllowUserPreferences)
         {
-            roomEntry.PlayersConfirmed.ForEach(player =>
+            roomEntry.PlayersConnected.ForEach(player =>
             {
                 languages.AddRange(player.Preferences.Languages.Where(l => !languages.Contains(l)));
                 genres.AddRange(player.Preferences.Genres.Where(g => !genres.Contains(g)));

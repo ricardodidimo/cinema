@@ -44,7 +44,13 @@ public class RoomRepositoryMem : IRoomRepository
 
     public async Task<IResult<MoviePickRoom>> ConfirmRound(MoviePickRoom room, Player player)
     {
-        room.PlayersConfirmed.Add(player);
+        Player? p = room.PlayersConnected.FirstOrDefault(p => p.Identifier == player.Identifier);
+        if (p is null)
+        {
+            return await Task.Run(() => Result.Fail<MoviePickRoom>(RoomHubErrors.UNABLE_UPDATE_ROOM));
+        }
+
+        p.IsReady = true;
         return await Task.Run(() => Result.Ok(room));
     }
 

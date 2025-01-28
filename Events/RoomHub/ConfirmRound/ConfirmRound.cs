@@ -16,18 +16,24 @@ public class ConfirmRound(IRoomRepository _roomRepository) : IConfirmRoundEvent
             return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(RoomHubErrors.ACTIVE_ROOM_NOT_FOUND));
         }
 
-        var confirmation = activeRoom.PlayersConfirmed.FirstOrDefault(p => p.Identifier == player.Identifier);
-        if (confirmation is not null)
+        var connectedPlayer = activeRoom.PlayersConnected.Find(p => p.Identifier == player.Identifier);
+        if (connectedPlayer is null)
+        {
+            return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(RoomHubErrors.PLAYER_NOT_FOUND));
+        }
+
+        if (connectedPlayer.IsReady)
         {
             return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(RoomHubErrors.PLAYER_ALREADY_CONFIRMED));
         }
 
-        var confirmOperation = await _roomRepository.ConfirmRound(activeRoom, player);
-        if (confirmOperation.IsFailed)
+        connectedPlayer.IsReady = true;
+        var updateOperation = await _roomRepository.Update(activeRoom);
+        if (updateOperation.IsFailed)
         {
-            return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(confirmOperation.Errors));
+            return await Task.Run(() => Result.Fail<ConfirmRoundResponse>(RoomHubErrors.UNABLE_UPDATE_ROOM));
         }
 
-        return await Task.Run(() => Result.Ok(ConfirmRoundResponse.ToResponse(activeRoom, player)));
+        return await Task.Run(() => Result.Ok(ConfirmRoundResponse.ToResponse(activeRoom, connectedPlayer)));
     }
 }

@@ -8,7 +8,7 @@ public class JoinRoomResponse
     public required string Identifier { get; set; }
     public required List<Player> PlayersConnected { get; set; }
     public int PlayersConnectedTotal { get; set; }
-    public required List<Player> PlayersConfirmed { get; set; }
+    public List<Player>? PlayersConfirmed { get; set; }
     public int PlayersConfirmedTotal { get; set; }
     public int MaxPlayers { get; set; }
     public int MaxSuggestions { get; set; }
