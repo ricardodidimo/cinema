@@ -11,6 +11,8 @@ public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _http
     {
         room.CurrentRound += 1;
         room.PlayersConfirmed = [];
+
+        _roomRepository.Update(room);
     }
 
     public async Task<IResult<MoviePickRoom>> Exec(PlayRoundRequest request, Player caller)
@@ -50,16 +52,31 @@ public class PlayRound(IRoomRepository _roomRepository, IHttpClientFactory _http
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {authKey}");
 
         string? baseUrl = _configuration[cinema.RoomHub.API_ENDPOINT_ENV_KEY];
-        string url = $"{baseUrl}?language={string.Join(",", languages)}&with_genres={string.Join(",", genres)}"; // &with_watch_providers={string.Join(",", streamings)}
+        if (baseUrl is null)
+        {
+            return await Task.Run(() => Result.Fail<MoviePickRoom>([RoomHubErrors.SUGGESTIONS_API_ERROR]));
+        }
+
+        string urlTemplate = "{0}?language={1}&with_genres={2}&with_watch_providers={3}&page={4}";
+        string url = string.Format(urlTemplate, baseUrl,
+            string.Join(",", languages),
+            string.Join(",", genres),
+            string.Join(",", streamings),
+            roomEntry.CurrentRound);
+
         HttpResponseMessage response = await client.GetAsync(url);
+        string responseContent = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
-            string a = await response.Content.ReadAsStringAsync();
             return Result.Fail<MoviePickRoom>(RoomHubErrors.SUGGESTIONS_API_ERROR);
-        };
+        }
 
-        string responseContent = await response.Content.ReadAsStringAsync();
-        var movieList = JsonConvert.DeserializeObject<SuggestionsResult>(responseContent);
+        SuggestionsResult? movieList = JsonConvert.DeserializeObject<SuggestionsResult>(responseContent);
+        if (movieList is null)
+        {
+            return Result.Fail<MoviePickRoom>(RoomHubErrors.SUGGESTIONS_API_ERROR);
+        }
+
         roomEntry.Suggestions = movieList;
         this.SetUpNextRound(roomEntry);
         return Result.Ok<MoviePickRoom>(roomEntry);
