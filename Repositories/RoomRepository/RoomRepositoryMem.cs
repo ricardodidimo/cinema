@@ -58,4 +58,15 @@ public class RoomRepositoryMem : IRoomRepository
 
         return await Task.Run(() => Result.Ok(room));
     }
+
+    public async Task<IResult<MoviePickRoom>> Delete(MoviePickRoom room)
+    {
+        bool deleteOp = Rooms.TryRemove(room.Identifier, out room!);
+        if (!deleteOp)
+        {
+            return await Task.Run(() => Result.Fail<MoviePickRoom>(RoomHubErrors.UNABLE_UPDATE_ROOM));
+        }
+
+        return await Task.Run(() => Result.Ok(room));
+    }
 }
