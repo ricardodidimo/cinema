@@ -27,6 +27,7 @@ public class CreateRoom(IRoomRepository _RoomRepository) : ICreateRoomEvent
             AllowUserPreferences = createReq.AllowUserPreferences,
             OwnerId = identity.Identifier,
             PlayersConnected = [identity],
+            CurrentRound = 1,
             PlayersConfirmed = []
         };
 
