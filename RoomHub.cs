@@ -88,7 +88,7 @@ namespace cinema
             var playerDecode = GetPlayer();
             if (playerDecode.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.CREATED_ROOM, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -100,7 +100,7 @@ namespace cinema
                 var removalOperation = await leaveRoomEvent.Exec(leaveRequest, playerDecode.Value);
                 if (removalOperation.IsFailed)
                 {
-                    await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(removalOperation.Errors.ToResultErrorList()));
+                    await Clients.Caller.SendAsync(RoomHubEvents.CREATED_ROOM, WebsocketResult.Fail(removalOperation.Errors.ToResultErrorList()));
                     return;
                 }
 
@@ -111,7 +111,7 @@ namespace cinema
             var createRoomOp = await createRoomEvent.Exec(request, playerDecode.Value);
             if (createRoomOp.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(createRoomOp.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.CREATED_ROOM, WebsocketResult.Fail(createRoomOp.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -126,7 +126,7 @@ namespace cinema
             var playerDecode = GetPlayer();
             if (playerDecode.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.JOINED, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -136,7 +136,7 @@ namespace cinema
                 var removalOperation = await leaveRoomEvent.Exec(new() { RoomCode = (string)connectedRoomId }, playerDecode.Value);
                 if (removalOperation.IsFailed)
                 {
-                    await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(removalOperation.Errors.ToResultErrorList()));
+                    await Clients.Caller.SendAsync(RoomHubEvents.JOINED, WebsocketResult.Fail(removalOperation.Errors.ToResultErrorList()));
                     return;
                 }
 
@@ -147,7 +147,7 @@ namespace cinema
             var joinOpertion = await joinRoomEvent.Exec(request, playerDecode.Value);
             if (joinOpertion.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(joinOpertion.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.JOINED, WebsocketResult.Fail(joinOpertion.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -164,21 +164,21 @@ namespace cinema
             var playerDecode = GetPlayer();
             if (playerDecode.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.LEFT, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
                 return;
             }
 
             var connectedRoomId = Context.Items.FirstOrDefault(infos => (string)infos.Key == CURRENT_ROOM_INFO_KEY).Value;
             if (connectedRoomId is null || (string)connectedRoomId != request.RoomCode)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail([RoomHubErrors.CONNECT_NOT_IN_GROUP]));
+                await Clients.Caller.SendAsync(RoomHubEvents.LEFT, WebsocketResult.Fail([RoomHubErrors.CONNECT_NOT_IN_GROUP]));
                 return;
             }
 
             var removalOperation = await leaveRoomEvent.Exec(request, playerDecode.Value);
             if (removalOperation.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(removalOperation.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.LEFT, WebsocketResult.Fail(removalOperation.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -203,21 +203,21 @@ namespace cinema
             var playerDecode = playerDecodeOp.Value;
             if (playerDecodeOp.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.CONFIRMED_ROUND, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
                 return;
             }
 
             var connectedRoomId = Context.Items.FirstOrDefault(infos => (string)infos.Key == CURRENT_ROOM_INFO_KEY).Value;
             if (connectedRoomId is null || (string)connectedRoomId != request.RoomCode)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail([RoomHubErrors.CONNECT_NOT_IN_GROUP]));
+                await Clients.Caller.SendAsync(RoomHubEvents.CONFIRMED_ROUND, WebsocketResult.Fail([RoomHubErrors.CONNECT_NOT_IN_GROUP]));
                 return;
             }
 
             var confirmOperation = await confirmRoundEvent.Exec(request, playerDecode);
             if (confirmOperation.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(confirmOperation.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.CONFIRMED_ROUND, WebsocketResult.Fail(confirmOperation.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -236,14 +236,14 @@ namespace cinema
             var playerDecode = playerDecodeOp.Value;
             if (playerDecodeOp.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.ROUND_FINISHED, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
                 return;
             }
 
             var playRoundOperation = await playRoundEvent.Exec(request, playerDecode);
             if (playRoundOperation.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playRoundOperation.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.ROUND_FINISHED, WebsocketResult.Fail(playRoundOperation.Errors.ToResultErrorList()));
                 return;
             }
 
@@ -256,14 +256,14 @@ namespace cinema
             var playerDecode = playerDecodeOp.Value;
             if (playerDecodeOp.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.VOTE_CASTED, WebsocketResult.Fail(playerDecodeOp.Errors.ToResultErrorList()));
                 return;
             }
 
             var castVoteOperation = await castVoteEvent.Exec(request, playerDecode);
             if (castVoteOperation.IsFailed)
             {
-                await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(castVoteOperation.Errors.ToResultErrorList()));
+                await Clients.Caller.SendAsync(RoomHubEvents.VOTE_CASTED, WebsocketResult.Fail(castVoteOperation.Errors.ToResultErrorList()));
                 return;
             }
 
