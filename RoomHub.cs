@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.Json;
 using cinema.Events.RoomHub;
 using cinema.Events.RoomHub.CastVote;
@@ -35,27 +35,15 @@ namespace cinema
             Context.Items.Remove(key);
         }
 
-        private Result<Player> GetPlayerFromToken(string token)
+        private Result<Player> GetPlayer()
         {
-            var tokenValidation = _JWTGenerator.ValidateAndDecrypt(token);
-            if (tokenValidation.IsFailed)
+            object? playerId = Context.Items.FirstOrDefault(infos => (string)infos.Key == CURRENT_PLAYER_INFO_KEY).Value;
+            if (playerId is null)
             {
-                return Result.Fail<Player>(tokenValidation.Errors);
+                return Result.Fail<Player>("No Identity");
             }
 
-            Claim? identityObj = tokenValidation.Value.Claims.FirstOrDefault(claims => claims.Type == JWTGenerator.WS_IDENTITY_CLAIM);
-            if (identityObj is null)
-            {
-                return Result.Fail<Player>([RoomHubErrors.IDENTITY_INFO_MISSING]);
-            }
-
-            var identity = JsonSerializer.Deserialize<Player>(identityObj.Value);
-            if (identity is null)
-            {
-                return Result.Fail<Player>([RoomHubErrors.IDENTITY_INFO_MISSING]);
-            }
-
-            return Result.Ok(identity);
+            return (Player)playerId;
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -78,7 +66,7 @@ namespace cinema
         {
             Player identity = new()
             {
-                Identifier = Guid.NewGuid().ToString(),
+                Identifier = Context.ConnectionId,
                 Avatar = request.Avatar,
                 Name = request.Name,
                 Preferences = request.Preferences
@@ -92,15 +80,12 @@ namespace cinema
             }
 
             this.StoreConnectionInfo(CURRENT_PLAYER_INFO_KEY, identity);
-            await Clients.Caller.SendAsync(RoomHubEvents.SUBSCRIBED, WebsocketResult.Ok(new
-            {
-                token = tokenGeneration.Value
-            }));
+            await Clients.Caller.SendAsync(RoomHubEvents.SUBSCRIBED, WebsocketResult.Ok(identity));
         }
 
-        public async Task CreateRoom(string token, CreateRoomRequest request)
+        public async Task CreateRoom(CreateRoomRequest request)
         {
-            var playerDecode = GetPlayerFromToken(token);
+            var playerDecode = GetPlayer();
             if (playerDecode.IsFailed)
             {
                 await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
@@ -136,9 +121,9 @@ namespace cinema
             await Clients.Caller.SendAsync(RoomHubEvents.CREATED_ROOM, WebsocketResult.Ok(CreateRoomResponse.ToResponse(createdRoom)));
         }
 
-        public async Task JoinRoom(string token, JoinRoomRequest request)
+        public async Task JoinRoom(JoinRoomRequest request)
         {
-            var playerDecode = GetPlayerFromToken(token);
+            var playerDecode = GetPlayer();
             if (playerDecode.IsFailed)
             {
                 await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
@@ -174,9 +159,9 @@ namespace cinema
             await Clients.Caller.SendAsync(RoomHubEvents.JOINED, WebsocketResult.Ok(JoinRoomResponse.ToResponse(roomEntry)));
         }
 
-        public async Task LeaveRoom(string token, LeaveRoomRequest request)
+        public async Task LeaveRoom(LeaveRoomRequest request)
         {
-            var playerDecode = GetPlayerFromToken(token);
+            var playerDecode = GetPlayer();
             if (playerDecode.IsFailed)
             {
                 await Clients.Caller.SendAsync(RoomHubEvents.RETRY, WebsocketResult.Fail(playerDecode.Errors.ToResultErrorList()));
@@ -204,9 +189,9 @@ namespace cinema
             await Clients.Caller.SendAsync(RoomHubEvents.LEFT, WebsocketResult.Ok(LeaveRoomResponse.ToResponse(removalOperation.Value)));
         }
 
-        public async Task ConfirmRound(string token, ConfirmRoundRequest request)
+        public async Task ConfirmRound(ConfirmRoundRequest request)
         {
-            var playerDecodeOp = GetPlayerFromToken(token);
+            var playerDecodeOp = GetPlayer();
             var playerDecode = playerDecodeOp.Value;
             if (playerDecodeOp.IsFailed)
             {
@@ -237,9 +222,9 @@ namespace cinema
             }
         }
 
-        public async Task PlayRound(string token, PlayRoundRequest request)
+        public async Task PlayRound(PlayRoundRequest request)
         {
-            var playerDecodeOp = GetPlayerFromToken(token);
+            var playerDecodeOp = GetPlayer();
             var playerDecode = playerDecodeOp.Value;
             if (playerDecodeOp.IsFailed)
             {
@@ -257,9 +242,9 @@ namespace cinema
             await Clients.Group(request.RoomCode).SendAsync(RoomHubEvents.ROUND_FINISHED, WebsocketResult.Ok(playRoundOperation.Value));
         }
 
-        public async Task CastVote(string token, CastVoteRequest request)
+        public async Task CastVote(CastVoteRequest request)
         {
-            var playerDecodeOp = GetPlayerFromToken(token);
+            var playerDecodeOp = GetPlayer();
             var playerDecode = playerDecodeOp.Value;
             if (playerDecodeOp.IsFailed)
             {
