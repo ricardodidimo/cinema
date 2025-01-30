@@ -12,7 +12,7 @@ public class JWTGenerator(IConfiguration _configuration) : IJWTGenerator
 {
     public static readonly string WS_IDENTITY_CLAIM = "ws_identity";
     public static readonly int REFRESH_INTERVAL_MINS = 300;
-    public static readonly string JWT_ENCRYPTION_KEY_ID = "jwt_key";
+    public static readonly string JWT_ENCRYPTION_KEY_ID = "JWT_KEY";
 
     public IResult<string> Generate(Player user)
     {

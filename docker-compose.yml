@@ -1,0 +1,14 @@
+
+version: '3.4'
+
+services:
+  cinema:
+    image: cinema
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - JWT_KEY=${JWT_KEY}
+    ports:
+      - "8080:8080"
